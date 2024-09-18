@@ -13,6 +13,88 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #f0f2f6;
+    }
+    .stButton > button {
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+        border-radius: 30px;
+        padding: 15px 30px;
+        font-size: 18px;
+        transition: all 0.3s ease 0s;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .stButton > button:hover {
+        background-color: #45a049;
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+    .stButton > button:active {
+        transform: translateY(0px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .stRadio > label {
+        background-color: #e1e5eb;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease 0s;
+        cursor: pointer;
+    }
+    .stRadio > label:hover {
+        background-color: #d0d4d9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .stExpander {
+        background-color: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    h1 {
+        color: #2c3e50;
+        font-size: 36px;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+    h2, h3 {
+        color: #34495e;
+    }
+    .stAlert {
+        border-radius: 10px;
+        font-weight: bold;
+    }
+    .stSpinner > div {
+        border-color: #4CAF50 !important;
+    }
+    [data-testid="stAppViewContainer"] {
+        background-image: url("https://img.freepik.com/free-photo/vivid-blurred-colorful-wallpaper-background_58702-3508.jpg?size=626&ext=jpg");
+        background-size: cover;
+    }
+    [data-testid="stHeader"] {
+
+        background-color: rgba(0,0,0,0);
+    }
+    [data-testid="stToolbar"] {
+        right: 2rem;
+        background-image: url("");
+        background-size: cover;
+    }
+            
+    [data-testid="stSidebarContent"] {
+        background-image: url("https://img.freepik.com/free-vector/background-gradient-green-tones_23-2148382072.jpg");
+        background-size: cover;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
 # Get API keys from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
@@ -115,6 +197,8 @@ def generate_overall_summary(results):
 # Streamlit UI
 st.title("AI-Powered Search Engine")
 
+
+
 # Initialize session state for conversations
 if "conversations" not in st.session_state:
     st.session_state.conversations = {}
@@ -193,19 +277,3 @@ if st.session_state.current_conversation_id:
         st.rerun()
 else:
     st.info("Please create or select a conversation from the sidebar to start chatting.")
-
-# Add a sidebar with additional information
-st.sidebar.title("About")
-st.sidebar.info(
-    "This is an AI-powered search engine that uses LangChain and OpenAI's GPT model. "
-    "It can answer questions and provide information on a wide range of topics. "
-    "You can create multiple conversations and switch between them using the sidebar."
-)
-
-# Add a footer
-st.markdown(
-    """
-    ---
-    Created with ❤️ using Streamlit, LangChain, and OpenAI
-    """
-)
