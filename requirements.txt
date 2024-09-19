@@ -1,5 +1,5 @@
 langchain
 streamlit
 langchain-community
-langhain-openai
+langchain-openai
 langgraph
