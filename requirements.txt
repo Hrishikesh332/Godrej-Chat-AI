@@ -3,3 +3,4 @@ streamlit
 langchain-community
 langchain-openai
 langgraph
+firbase-admin
