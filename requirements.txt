@@ -3,4 +3,4 @@ streamlit
 langchain-community
 langchain-openai
 langgraph
-firbase-admin==6.5.0
+firebase-admin==6.2.0
