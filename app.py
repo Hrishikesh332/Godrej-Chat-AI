@@ -9,11 +9,16 @@ from langgraph.graph import END, Graph
 import os
 import uuid
 from dotenv import load_dotenv
-from firebase_auth import login, signup
+from firebase_auth import login, signup, logout
+
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Streamlit page config
+st.set_page_config(page_title="AI-Powered Search Engine", layout="wide")
+
+# Custom CSS
 st.markdown("""
     <style>
     .stApp {
@@ -79,7 +84,6 @@ st.markdown("""
         background-size: cover;
     }
     [data-testid="stHeader"] {
-
         background-color: rgba(0,0,0,0);
     }
     [data-testid="stToolbar"] {
@@ -87,14 +91,12 @@ st.markdown("""
         background-image: url("");
         background-size: cover;
     }
-            
     [data-testid="stSidebarContent"] {
         background-image: url("https://img.freepik.com/free-vector/background-gradient-green-tones_23-2148382072.jpg");
         background-size: cover;
     }
     </style>
 """, unsafe_allow_html=True)
-
 
 # Get API keys from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -195,6 +197,16 @@ def generate_overall_summary(results):
     summary = llm.predict(summary_prompt)
     return summary
 
+# Function to check if query is relevant to user's department and interests
+def is_relevant_query(query, user_data):
+    prompt = f"""
+    Given the user's department: {user_data['department']}
+    and interests: {', '.join(user_data['interests'])},
+    is the following query relevant? Query: {query}
+    Respond with 'Yes' or 'No'.
+    """
+    response = llm.predict(prompt)
+    return response.strip().lower() == 'yes'
 
 # Streamlit UI
 st.title("AI-Powered Search Engine")
@@ -203,20 +215,20 @@ st.title("AI-Powered Search Engine")
 if "user_logged_in" not in st.session_state:
     st.session_state.user_logged_in = False
 
-# Login/Signup section
-if not st.session_state.user_logged_in:
-    tab1, tab2 = st.tabs(["Login", "Sign Up"])
-    
+# Sidebar
+st.sidebar.title("User Management")
+if st.session_state.user_logged_in:
+    logout()
+else:
+    tab1, tab2 = st.sidebar.tabs(["Login", "Sign Up"])
     with tab1:
         if login():
             st.session_state.user_logged_in = True
             st.rerun()
-    
     with tab2:
         if signup():
             st.session_state.user_logged_in = True
             st.rerun()
-
 
 # Main chat interface (only visible after login)
 if st.session_state.user_logged_in:
@@ -268,25 +280,29 @@ if st.session_state.user_logged_in:
             if len(conversation["messages"]) == 1:
                 conversation["title"] = summarize_conversation(conversation["messages"])
 
-            # Generate AI response
-            try:
-                response = chain.invoke({"input": prompt, "intermediate_steps": []})
-                
-                # Check if there are any intermediate steps
-                if response.get('intermediate_steps') and response['intermediate_steps']:
-                    search_results = response['intermediate_steps'][0][1]
-                else:
-                    # If no intermediate steps, perform a direct search
-                    search_tool = TavilySearchResults(max_results=5)
-                    search_results = search_tool.invoke(prompt)
-                
-                formatted_results = format_search_results(search_results)
-                overall_summary = generate_overall_summary(search_results)
-                
-                ai_response = f"{response['agent_outcome'].return_values['output']}\n\n{formatted_results}\nOverall Summary:\n{overall_summary}"
-            except Exception as e:
-                st.error(f"An error occurred while processing the search results: {str(e)}")
-                ai_response = "I apologize, but I encountered an error while processing the search results. Please try your query again or rephrase it."
+            # Check if query is relevant to user's department and interests
+            if is_relevant_query(prompt, st.session_state.user_data):
+                # Generate AI response
+                try:
+                    response = chain.invoke({"input": prompt, "intermediate_steps": []})
+                    
+                    # Check if there are any intermediate steps
+                    if response.get('intermediate_steps') and response['intermediate_steps']:
+                        search_results = response['intermediate_steps'][0][1]
+                    else:
+                        # If no intermediate steps, perform a direct search
+                        search_tool = TavilySearchResults(max_results=5)
+                        search_results = search_tool.invoke(prompt)
+                    
+                    formatted_results = format_search_results(search_results)
+                    overall_summary = generate_overall_summary(search_results)
+                    
+                    ai_response = f"{response['agent_outcome'].return_values['output']}\n\n{formatted_results}\nOverall Summary:\n{overall_summary}"
+                except Exception as e:
+                    st.error(f"An error occurred while processing the search results: {str(e)}")
+                    ai_response = "I apologize, but I encountered an error while processing the search results. Please try your query again or rephrase it."
+            else:
+                ai_response = "I apologize, but this query doesn't seem to be related to your department or interests. Would you like to rephrase your question or ask something more relevant?"
 
             # Display AI response in chat message container
             with st.chat_message("assistant"):

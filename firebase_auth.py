@@ -1,16 +1,14 @@
 import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, auth, db
 import streamlit as st
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Function to get Firebase credentials
 def get_firebase_credentials():
 
-        return {
+    creds = {
             "type": "service_account",
             "project_id": os.getenv("FIREBASE_PROJECT_ID"),
             "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
@@ -20,14 +18,22 @@ def get_firebase_credentials():
             "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
             "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
             "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_X509_CERT_URL"),
-            "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL")
+            "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL"),
+            "database_url": os.getenv("FIREBASE_DATABASE_URL")
+            
         }
+    
+    
+    return creds
 
 # Initialize Firebase only if it hasn't been initialized yet
 if not firebase_admin._apps:
     firebase_cred = get_firebase_credentials()
     cred = credentials.Certificate(firebase_cred)
-    firebase_admin.initialize_app(cred)
+
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': os.getenv("FIREBASE_DATABASE_URL")
+    })
 
 def login():
     st.title("Login")
@@ -37,11 +43,14 @@ def login():
     if st.button("Login", key="login_button"):
         try:
             user = auth.get_user_by_email(email)
-            # Note: Firebase Admin SDK doesn't provide a way to verify passwords
-            # You would typically use Firebase Authentication REST API for this
-            # For demonstration, we'll assume the login is successful if the email exists
-            st.success("Logged in successfully!")
-            return True
+
+            user_data = db.reference(f'users/{user.uid}').get()
+            if user_data:
+                st.session_state.user_data = user_data
+                st.success("Logged in successfully!")
+                return True
+            else:
+                st.error("User data not found")
         except auth.UserNotFoundError:
             st.error("Invalid email or password")
         except Exception as e:
@@ -62,7 +71,14 @@ def signup():
                 email=email,
                 password=password
             )
-            # Here you would typically store the additional info (department, interests, skills) in your database
+
+            user_data = {
+                "department": department,
+                "interests": interests.split(','),
+                "skills": skills.split(',')
+            }
+            db.reference(f'users/{user.uid}').set(user_data)
+            st.session_state.user_data = user_data
             st.success("Account created successfully!")
             return True
         except auth.EmailAlreadyExistsError:
@@ -70,3 +86,10 @@ def signup():
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
     return False
+
+def logout():
+    if st.sidebar.button("Logout"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.success("Logged out successfully!")
+        st.rerun()
