@@ -9,11 +9,7 @@ load_dotenv()
 
 # Function to get Firebase credentials
 def get_firebase_credentials():
-    if 'firebase' in st.secrets:
-        # We're on Streamlit Cloud, use st.secrets
-        return st.secrets['firebase']
-    else:
-        # We're running locally, use environment variables
+
         return {
             "type": "service_account",
             "project_id": os.getenv("FIREBASE_PROJECT_ID"),
