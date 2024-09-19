@@ -50,6 +50,12 @@ Try the Application Now -
     Godrej AI Chat
 </a>
 
+
+## Worflow Architecture
+
+![https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/worflow.png](https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/worflow.png)
+
+
 ## Features
 
 - **AI-Powered Conversations** - OpenAI model for intelligent responses.
@@ -65,6 +71,12 @@ Try the Application Now -
 - **Backend**: Python, OpenAI, Langchain, Langchain-openai, LangGraph, Langchain-community
 - **Deployment**: Streamlit Cloud
 - **Authentication**: Firebase Authentication
+
+
+## User Journey of Application
+
+![https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/user-journey.png](https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/user-journey.png)
+
 
 ## Instructions on running project locally
 
