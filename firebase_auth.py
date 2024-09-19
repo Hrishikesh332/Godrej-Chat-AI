@@ -4,7 +4,7 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 import datetime
-
+import json
 
 load_dotenv()
 
@@ -45,7 +45,7 @@ def login():
     if st.button("Login", key="login_button"):
         try:
             user = auth.get_user_by_email(email)
-            user_data = db.reference(f'users/{user.uid}').get()
+            user_data = db.reference(f'users/{user.uid}/info').get()
             if user_data:
                 st.session_state.user_data = user_data
                 st.success("Logged in successfully!")
@@ -79,9 +79,10 @@ def signup():
             user_data = {
                 "department": department,
                 "interests": interests.split(','),
-                "skills": skills.split(',')
+                "skills": skills.split(','),
+                "uid": user.uid
             }
-            db.reference(f'users/{user.uid}').set(user_data)
+            db.reference(f'users/{user.uid}/info').set(user_data)
             st.session_state.user_data = user_data
             st.success("Account created successfully!")
             return True
@@ -99,24 +100,53 @@ def log_to_firebase(uid, email, status, error_message=None):
         "error_message": error_message,
         "timestamp": timestamp
     }
-    db.reference(f'users/{uid}/{timestamp}').set(log_data)
+    db.reference(f'users/{uid}/log/{timestamp}').set(log_data)
 
 
+
+
+def data_to_firebase(question, response):
+    if 'user_data' in st.session_state and st.session_state['user_data']:
+        user_data = st.session_state['user_data']
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+        log_data = {
+            "question": question,
+            "response": response
+        }
+
+
+        if 'uid' in user_data:
+            uid = user_data['uid']
+            db.reference(f'users/{uid}/chat/{timestamp}').set(log_data)
+            st.success("Data logged successfully.")
+        else:
+            st.warning("User ID not found. Data not logged.")
+    else:
+        st.warning("User not logged in. Data not logged.")
+
+def get_data_to_firebase():
+    if 'user_data' in st.session_state and st.session_state['user_data']:
+        user_data = st.session_state['user_data']
+        uid = user_data['uid']
+        user_chat=db.reference(f'users/{uid}/chat').get()
+        result = convert_chat_log(user_chat)
+        return result
+    else:
+        st.warning("User not logged in. Data not logged.")
+
+def convert_chat_log(log_content):
     
-# def data_to_firebase(user, question, response):
-#     if 'user_data' in st.session_state:
-#         user_data = st.session_state['user_data']
-#         timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
-#         log_data = {
-#             "question": question,
-#             "response": response
-#         }
-#         uid=user["uid"]
-#         db.reference(f'users/{uid}/{timestamp}').set(log_data)
-#     else:
-#         user_data = None 
-#         st.message("User not logged In")
+    # data = json.loads(log_content)
 
+    result = [
+        {
+            "question": entry["question"],
+            "response": entry["response"]
+        }
+        for entry in log_content.values()
+    ]
+    
+    return result
 
 def logout():
     if st.sidebar.button("Logout"):

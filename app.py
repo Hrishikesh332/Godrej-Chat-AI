@@ -9,7 +9,7 @@ from langgraph.graph import END, Graph
 import os
 import uuid
 from dotenv import load_dotenv
-from firebase_auth import login, signup, logout
+from firebase_auth import login, signup, logout, data_to_firebase, get_data_to_firebase
 
 # Load environment variables from .env file
 load_dotenv()
@@ -231,6 +231,8 @@ else:
 
 # Main chat interface (only visible after login)
 if st.session_state.user_logged_in:
+    current_user_chat=get_data_to_firebase()
+    print(current_user_chat)
     # Initialize session state for conversations
     if "conversations" not in st.session_state:
         st.session_state.conversations = {}
@@ -243,12 +245,14 @@ if st.session_state.user_logged_in:
 
     # New conversation button
     if st.sidebar.button("New Conversation"):
+
         new_id = str(uuid.uuid4())
         st.session_state.conversations[new_id] = {
             "title": "New Conversation",
             "messages": []
         }
         st.session_state.current_conversation_id = new_id
+    #Chat History with Inside Div Overflow
 
     # Display and select conversations
     for conv_id, conv_data in st.session_state.conversations.items():
@@ -308,7 +312,7 @@ if st.session_state.user_logged_in:
                 st.markdown(ai_response)
             # Add AI response to chat history
             conversation["messages"].append({"role": "assistant", "content": ai_response})
-            # data_to_firebase(st.session_state.user_data, prompt, ai_response)
+            data_to_firebase(prompt, ai_response)
 
             # Force a rerun to update the display with the new messages
             st.rerun()
