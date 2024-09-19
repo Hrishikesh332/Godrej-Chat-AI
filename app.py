@@ -11,13 +11,11 @@ import uuid
 from dotenv import load_dotenv
 from firebase_auth import login, signup, logout, data_to_firebase
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Streamlit page config
 st.set_page_config(page_title="AI-Powered Search Engine", layout="wide")
 
-# Custom CSS
+
 st.markdown("""
     <style>
     .stApp {
@@ -101,7 +99,7 @@ st.markdown("""
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-# Ensure API keys are set
+
 if not OPENAI_API_KEY or not TAVILY_API_KEY:
     st.error("Please set OPENAI_API_KEY and TAVILY_API_KEY in your .env file")
     st.stop()
@@ -130,7 +128,6 @@ def should_continue(data):
     else:
         return "continue"
 
-# Set up the workflow
 workflow = Graph()
 workflow.add_node("agent", agent)
 workflow.add_node("tools", execute_tools)
@@ -159,7 +156,6 @@ def summarize_conversation(messages):
     summary = llm.predict(summary_prompt)
     return summary.strip()
 
-# Function to generate a three-line summary
 def generate_three_line_summary(content):
     summary_prompt = f"Provide a three-line summary of the following content:\n\n{content}\n\nSummary:"
     summary = llm.predict(summary_prompt)
@@ -186,7 +182,6 @@ def format_search_results(results):
     
     return formatted_results
 
-# Function to generate overall summary
 def generate_overall_summary(results):
     if not results:
         return "No information available to summarize."
@@ -196,7 +191,6 @@ def generate_overall_summary(results):
     summary = llm.predict(summary_prompt)
     return summary
 
-# Function to check if query is relevant to user's department and interests
 def is_relevant_query(query, user_data):
     prompt = f"""
     Given the user's department: {user_data['department']}
@@ -207,14 +201,14 @@ def is_relevant_query(query, user_data):
     response = llm.predict(prompt)
     return response.strip().lower() == 'yes'
 
-# Streamlit UI
+
 st.title("AI-Powered Search Engine")
 
 # Check if user is logged in
 if "user_logged_in" not in st.session_state:
     st.session_state.user_logged_in = False
 
-# Sidebar
+
 st.sidebar.title("User Management")
 if st.session_state.user_logged_in:
     logout()
@@ -229,7 +223,7 @@ else:
             st.session_state.user_logged_in = True
             st.rerun()
 
-# Main chat interface (only visible after login)
+
 if st.session_state.user_logged_in:
     # current_user_chat=get_data_to_firebase()
     # print(current_user_chat)
@@ -254,7 +248,7 @@ if st.session_state.user_logged_in:
         st.session_state.current_conversation_id = new_id
     #Chat History with Inside Div Overflow
 
-    # Display and select conversations
+ 
     for conv_id, conv_data in st.session_state.conversations.items():
         # Generate or update summary title
         if conv_data["messages"]:
@@ -263,11 +257,11 @@ if st.session_state.user_logged_in:
         if st.sidebar.button(conv_data["title"], key=conv_id):
             st.session_state.current_conversation_id = conv_id
 
-    # Main chat interface
+
     if st.session_state.current_conversation_id:
         conversation = st.session_state.conversations[st.session_state.current_conversation_id]
         
-        # Display chat messages from history on app rerun
+
         for message in conversation["messages"]:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
@@ -285,15 +279,13 @@ if st.session_state.user_logged_in:
 
             # Check if query is relevant to user's department and interests
             if is_relevant_query(prompt, st.session_state.user_data):
-                # Generate AI response
                 try:
                     response = chain.invoke({"input": prompt, "intermediate_steps": []})
                     
-                    # Check if there are any intermediate steps
                     if response.get('intermediate_steps') and response['intermediate_steps']:
                         search_results = response['intermediate_steps'][0][1]
                     else:
-                        # If no intermediate steps, perform a direct search
+            
                         search_tool = TavilySearchResults(max_results=5)
                         search_results = search_tool.invoke(prompt)
                     
@@ -307,7 +299,6 @@ if st.session_state.user_logged_in:
             else:
                 ai_response = "I apologize, but this query doesn't seem to be related to your department or interests. Would you like to rephrase your question or ask something more relevant?"
 
-            # Display AI response in chat message container
             with st.chat_message("assistant"):
                 st.markdown(ai_response)
             # Add AI response to chat history
