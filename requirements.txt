@@ -1,0 +1,4 @@
+langchain
+streamlit
+langchain-community
+langgraph
