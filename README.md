@@ -3,15 +3,6 @@
   <h3 align="center">Godrej AI Chat Application</h3>
   <p align="center">
     Advance Search with Personalization
-    <br />
-    <a href="https://github.com/Hrishikesh332/Godrej-Chat-AI"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://godrej-chat-ai.streamlit.app/">View Demo</a>
-    ·
-    <a href="https://github.com/Hrishikesh332/Godrej-Chat-AI/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/Hrishikesh332/Godrej-Chat-AI/issues">Request Feature</a>
   </p>
 </div>
 
