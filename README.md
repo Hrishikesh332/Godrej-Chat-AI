@@ -24,7 +24,7 @@
 
 The Godrej AI Chat is specifically built with the multi agent workflow, to provide the result in a desired format. The user can search about any information form LLM which is connected to the web, it also provide the top 5 best sources, and even summarizing them which saves a lot of time.
 
-The thread conversation management is also been applied to store the conversation of the user, for now it's kept in the vanishing mode and it is maintain as per the session state.
+The thread conversation management is also been applied to store the conversation of the user, the conversation is stored in the Firebase Real Time Database.
 
 The personalization for the chat is provided by taking the information of the skill, department and the interest of the user and taking use of it for the search.
  
@@ -124,7 +124,52 @@ Run the Server -
   http://localhost:8501/
 ```
 
-
+## Data Store In Firebase
+```bash
+{
+  "users": {
+    "YvkgYtJ582Z8UTCgch1xycnvmG72": {
+      "2024-09-19T232234": {
+        "email": "hriskikesh.yadav332@gmail.com",
+        "status": "success",
+        "timestamp": "2024-09-19T232234"
+      },
+      "2024-09-19T233211": {
+        "email": "hriskikesh.yadav332@gmail.com",
+        "status": "success",
+        "timestamp": "2024-09-19T233211"
+      },
+      "2024-09-19T233648": {
+        "email": "hriskikesh.yadav332@gmail.com",
+        "status": "success",
+        "timestamp": "2024-09-19T233648"
+      },
+      "2024-09-19T233846": {
+        "email": "hriskikesh.yadav332@gmail.com",
+        "status": "success",
+        "timestamp": "2024-09-19T233846"
+      },
+      "2024-09-19T234305": {
+        "email": "hriskikesh.yadav332@gmail.com",
+        "status": "success",
+        "timestamp": "2024-09-19T234305"
+      },
+      "2024-09-19T235402": {
+        "email": "hriskikesh.yadav332@gmail.com",
+        "status": "success",
+        "timestamp": "2024-09-19T235402"
+      },
+      "department": "IT",
+      "interests": [
+        "Technology"
+      ],
+      "skills": [
+        "Data"
+      ]
+    }
+  }
+}
+```
 ## Feedback
 
 If you have any feedback, please reach out to us at **hriskikesh.yadav332@gmail.com**
