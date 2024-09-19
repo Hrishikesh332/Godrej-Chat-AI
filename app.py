@@ -9,7 +9,7 @@ from langgraph.graph import END, Graph
 import os
 import uuid
 from dotenv import load_dotenv
-from firebase_auth import login, signup, logout, data_to_firebase, get_data_to_firebase
+from firebase_auth import login, signup, logout, data_to_firebase
 
 # Load environment variables from .env file
 load_dotenv()
@@ -231,8 +231,8 @@ else:
 
 # Main chat interface (only visible after login)
 if st.session_state.user_logged_in:
-    current_user_chat=get_data_to_firebase()
-    print(current_user_chat)
+    # current_user_chat=get_data_to_firebase()
+    # print(current_user_chat)
     # Initialize session state for conversations
     if "conversations" not in st.session_state:
         st.session_state.conversations = {}
