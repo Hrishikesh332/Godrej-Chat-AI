@@ -9,6 +9,7 @@ from langgraph.graph import END, Graph
 import os
 import uuid
 from dotenv import load_dotenv
+from firebase_auth import login, signup
 
 # Load environment variables from .env file
 load_dotenv()
@@ -194,86 +195,108 @@ def generate_overall_summary(results):
     summary = llm.predict(summary_prompt)
     return summary
 
+
 # Streamlit UI
 st.title("AI-Powered Search Engine")
 
+# Check if user is logged in
+if "user_logged_in" not in st.session_state:
+    st.session_state.user_logged_in = False
 
-
-# Initialize session state for conversations
-if "conversations" not in st.session_state:
-    st.session_state.conversations = {}
-
-if "current_conversation_id" not in st.session_state:
-    st.session_state.current_conversation_id = None
-
-# Sidebar for conversation management
-st.sidebar.title("Conversations")
-
-# New conversation button
-if st.sidebar.button("New Conversation"):
-    new_id = str(uuid.uuid4())
-    st.session_state.conversations[new_id] = {
-        "title": "New Conversation",
-        "messages": []
-    }
-    st.session_state.current_conversation_id = new_id
-
-# Display and select conversations
-for conv_id, conv_data in st.session_state.conversations.items():
-    # Generate or update summary title
-    if conv_data["messages"]:
-        conv_data["title"] = summarize_conversation(conv_data["messages"])
+# Login/Signup section
+if not st.session_state.user_logged_in:
+    tab1, tab2 = st.tabs(["Login", "Sign Up"])
     
-    if st.sidebar.button(conv_data["title"], key=conv_id):
-        st.session_state.current_conversation_id = conv_id
-
-# Main chat interface
-if st.session_state.current_conversation_id:
-    conversation = st.session_state.conversations[st.session_state.current_conversation_id]
+    with tab1:
+        if login():
+            st.session_state.user_logged_in = True
+            st.rerun()
     
-    # Display chat messages from history on app rerun
-    for message in conversation["messages"]:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    with tab2:
+        if signup():
+            st.session_state.user_logged_in = True
+            st.rerun()
 
-    # React to user input
-    if prompt := st.chat_input("What would you like to search for?"):
-        # Display user message in chat message container
-        st.chat_message("user").markdown(prompt)
-        # Add user message to chat history
-        conversation["messages"].append({"role": "user", "content": prompt})
 
-        # Update conversation title after first message
-        if len(conversation["messages"]) == 1:
-            conversation["title"] = summarize_conversation(conversation["messages"])
+# Main chat interface (only visible after login)
+if st.session_state.user_logged_in:
+    # Initialize session state for conversations
+    if "conversations" not in st.session_state:
+        st.session_state.conversations = {}
 
-        # Generate AI response
-        try:
-            response = chain.invoke({"input": prompt, "intermediate_steps": []})
-            
-            # Check if there are any intermediate steps
-            if response.get('intermediate_steps') and response['intermediate_steps']:
-                search_results = response['intermediate_steps'][0][1]
-            else:
-                # If no intermediate steps, perform a direct search
-                search_tool = TavilySearchResults(max_results=5)
-                search_results = search_tool.invoke(prompt)
-            
-            formatted_results = format_search_results(search_results)
-            overall_summary = generate_overall_summary(search_results)
-            
-            ai_response = f"{response['agent_outcome'].return_values['output']}\n\n{formatted_results}\nOverall Summary:\n{overall_summary}"
-        except Exception as e:
-            st.error(f"An error occurred while processing the search results: {str(e)}")
-            ai_response = "I apologize, but I encountered an error while processing the search results. Please try your query again or rephrase it."
+    if "current_conversation_id" not in st.session_state:
+        st.session_state.current_conversation_id = None
 
-        # Display AI response in chat message container
-        with st.chat_message("assistant"):
-            st.markdown(ai_response)
-        # Add AI response to chat history
-        conversation["messages"].append({"role": "assistant", "content": ai_response})
+    # Sidebar for conversation management
+    st.sidebar.title("Conversations")
 
-        # Force a rerun to update the display with the new messages
-        st.rerun()
+    # New conversation button
+    if st.sidebar.button("New Conversation"):
+        new_id = str(uuid.uuid4())
+        st.session_state.conversations[new_id] = {
+            "title": "New Conversation",
+            "messages": []
+        }
+        st.session_state.current_conversation_id = new_id
+
+    # Display and select conversations
+    for conv_id, conv_data in st.session_state.conversations.items():
+        # Generate or update summary title
+        if conv_data["messages"]:
+            conv_data["title"] = summarize_conversation(conv_data["messages"])
+        
+        if st.sidebar.button(conv_data["title"], key=conv_id):
+            st.session_state.current_conversation_id = conv_id
+
+    # Main chat interface
+    if st.session_state.current_conversation_id:
+        conversation = st.session_state.conversations[st.session_state.current_conversation_id]
+        
+        # Display chat messages from history on app rerun
+        for message in conversation["messages"]:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+        # React to user input
+        if prompt := st.chat_input("What would you like to search for?"):
+            # Display user message in chat message container
+            st.chat_message("user").markdown(prompt)
+            # Add user message to chat history
+            conversation["messages"].append({"role": "user", "content": prompt})
+
+            # Update conversation title after first message
+            if len(conversation["messages"]) == 1:
+                conversation["title"] = summarize_conversation(conversation["messages"])
+
+            # Generate AI response
+            try:
+                response = chain.invoke({"input": prompt, "intermediate_steps": []})
+                
+                # Check if there are any intermediate steps
+                if response.get('intermediate_steps') and response['intermediate_steps']:
+                    search_results = response['intermediate_steps'][0][1]
+                else:
+                    # If no intermediate steps, perform a direct search
+                    search_tool = TavilySearchResults(max_results=5)
+                    search_results = search_tool.invoke(prompt)
+                
+                formatted_results = format_search_results(search_results)
+                overall_summary = generate_overall_summary(search_results)
+                
+                ai_response = f"{response['agent_outcome'].return_values['output']}\n\n{formatted_results}\nOverall Summary:\n{overall_summary}"
+            except Exception as e:
+                st.error(f"An error occurred while processing the search results: {str(e)}")
+                ai_response = "I apologize, but I encountered an error while processing the search results. Please try your query again or rephrase it."
+
+            # Display AI response in chat message container
+            with st.chat_message("assistant"):
+                st.markdown(ai_response)
+            # Add AI response to chat history
+            conversation["messages"].append({"role": "assistant", "content": ai_response})
+
+            # Force a rerun to update the display with the new messages
+            st.rerun()
+    else:
+        st.info("Please create or select a conversation from the sidebar to start chatting.")
 else:
-    st.info("Please create or select a conversation from the sidebar to start chatting.")
+    st.info("Please log in or sign up to access the chat interface.")
