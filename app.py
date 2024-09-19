@@ -11,7 +11,6 @@ import uuid
 from dotenv import load_dotenv
 from firebase_auth import login, signup, logout
 
-
 # Load environment variables from .env file
 load_dotenv()
 
@@ -309,6 +308,7 @@ if st.session_state.user_logged_in:
                 st.markdown(ai_response)
             # Add AI response to chat history
             conversation["messages"].append({"role": "assistant", "content": ai_response})
+            # data_to_firebase(st.session_state.user_data, prompt, ai_response)
 
             # Force a rerun to update the display with the new messages
             st.rerun()

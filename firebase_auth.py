@@ -3,6 +3,8 @@ from firebase_admin import credentials, auth, db
 import streamlit as st
 import os
 from dotenv import load_dotenv
+import datetime
+
 
 load_dotenv()
 
@@ -43,18 +45,20 @@ def login():
     if st.button("Login", key="login_button"):
         try:
             user = auth.get_user_by_email(email)
-
             user_data = db.reference(f'users/{user.uid}').get()
             if user_data:
                 st.session_state.user_data = user_data
                 st.success("Logged in successfully!")
+                log_to_firebase(user.uid, email, "success")
                 return True
             else:
                 st.error("User data not found")
         except auth.UserNotFoundError:
             st.error("Invalid email or password")
+            # log_to_firebase(None, email, "failure", "Invalid email or password")
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
+            # log_to_firebase(None, email, "failure", str(e))
     return False
 
 def signup():
@@ -87,9 +91,38 @@ def signup():
             st.error(f"An error occurred: {str(e)}")
     return False
 
+def log_to_firebase(uid, email, status, error_message=None):
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+    log_data = {
+        "email": email,
+        "status": status,
+        "error_message": error_message,
+        "timestamp": timestamp
+    }
+    db.reference(f'users/{uid}/{timestamp}').set(log_data)
+
+
+    
+# def data_to_firebase(user, question, response):
+#     if 'user_data' in st.session_state:
+#         user_data = st.session_state['user_data']
+#         timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+#         log_data = {
+#             "question": question,
+#             "response": response
+#         }
+#         uid=user["uid"]
+#         db.reference(f'users/{uid}/{timestamp}').set(log_data)
+#     else:
+#         user_data = None 
+#         st.message("User not logged In")
+
+
 def logout():
     if st.sidebar.button("Logout"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.success("Logged out successfully!")
         st.rerun()
+
+
