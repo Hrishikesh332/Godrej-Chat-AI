@@ -124,6 +124,12 @@ Run the Server -
   http://localhost:8501/
 ```
 
+If you wanna try with the other credentials, without signning, you can try with
+
+mail - hriskikesh.yadav332@gmail.com
+psswd - test123
+
+
 ## Data Store In Firebase
 ```bash
 {
