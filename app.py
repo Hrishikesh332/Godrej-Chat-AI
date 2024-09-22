@@ -20,6 +20,14 @@ st.set_page_config(page_title="AI-Powered Search Engine", layout="wide")
 
 st.markdown("""
     <style>
+
+    .big-font {
+        font-size: 40px !important;
+        font-weight: bold;
+        color: #000000;
+        text-align: center;
+        margin-bottom: 30px;
+    }
     .stApp {
         background-color: #f0f2f6;
     }
@@ -259,7 +267,7 @@ def get_recent_news(user_data, num_articles=10):
     
     return filtered_articles[:num_articles]
 
-st.title("AI-Powered Search Engine")
+st.markdown('<p class="big-font">Advance AI Powered Search Engine 🤖</p>', unsafe_allow_html=True)
 
 # Check if user is logged in
 if "user_logged_in" not in st.session_state:
