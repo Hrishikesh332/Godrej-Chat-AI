@@ -105,15 +105,16 @@ def log_to_firebase(uid, email, status, error_message=None):
 
 
 
-def data_to_firebase(question, response):
+
+def data_to_firebase(question, response, title):
     if 'user_data' in st.session_state and st.session_state['user_data']:
         user_data = st.session_state['user_data']
         timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
         log_data = {
             "question": question,
-            "response": response
+            "response": response,
+            "title": title
         }
-
 
         if 'uid' in user_data:
             uid = user_data['uid']
@@ -124,15 +125,30 @@ def data_to_firebase(question, response):
     else:
         st.warning("User not logged in. Data not logged.")
 
-def get_data_to_firebase():
+def get_conversation_titles():
     if 'user_data' in st.session_state and st.session_state['user_data']:
         user_data = st.session_state['user_data']
         uid = user_data['uid']
-        user_chat=db.reference(f'users/{uid}/chat').get()
-        result = convert_chat_log(user_chat)
-        return result
-    else:
-        st.warning("User not logged in. Data not logged.")
+        user_chat = db.reference(f'users/{uid}/chat').get()
+        
+        if user_chat:
+            titles = [entry.get('title', 'Untitled') for entry in user_chat.values()]
+            return list(set(titles))
+        
+    return []
+
+
+def get_recent_questions():
+    if 'user_data' in st.session_state and st.session_state['user_data']:
+        user_data = st.session_state['user_data']
+        uid = user_data['uid']
+        user_chat = db.reference(f'users/{uid}/chat').get()
+        
+        if user_chat:
+            questions = [entry.get('question', '') for entry in user_chat.values()]
+            return questions[-10:] 
+        
+    return []
 
 def convert_chat_log(log_content):
     
@@ -147,6 +163,26 @@ def convert_chat_log(log_content):
     ]
     
     return result
+
+
+def get_conversation_data(uid):
+    user_chat = db.reference(f'users/{uid}/chat').get()
+    if user_chat:
+        conversations = {}
+        for timestamp, data in user_chat.items():
+            title = data.get('title', 'Untitled')
+            if title not in conversations:
+                conversations[title] = []
+            conversations[title].append({
+                "role": "user",
+                "content": data.get('question', '')
+            })
+            conversations[title].append({
+                "role": "assistant",
+                "content": data.get('response', '')
+            })
+        return conversations
+    return {}
 
 def logout():
     if st.sidebar.button("Logout"):

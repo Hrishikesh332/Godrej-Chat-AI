@@ -53,24 +53,25 @@ Try the Application Now -
 
 ## Worflow Architecture
 
-![https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/worflow.png](https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/worflow.png)
+![https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/worflow-recent-news.png](https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/worflow-recent-news.png)
 
 
 ## Features
 
-- **AI-Powered Conversations** - OpenAI model for intelligent responses.
+- **AI-Powered Conversations** - LLM model for intelligent responses.
 - **Custom Search** - Uses Tavily Search for searching relevant content from web.
-- **Personalization** - User skill and interest info is taken into the account 
-- **User Authentication** - Secure login and signup functionality powered by Firebase.
+- **Personalization** - User skill, interest and Interaction info is taken into the account to provide the latest news and updates.
+- **User Authentication** - Secure login and signup functionality powered by Firebase Auth.
 - **Responsive UI** - Interactive chat UI built with Streamlit.
-- **Multi-agent System** - Supports multiple agents for diverse AI functionalities.
+- **Multi-agent Workflow** - Supports multiple agents for diverse AI functionalities with the help of Langgraph.
+
 
 ## Tech Stack
 
 - **Frontend**: Streamlit
-- **Backend**: Python, OpenAI, Langchain, Langchain-openai, LangGraph, Langchain-community
+- **Backend**: Python, OpenAI, Langchain, Langchain-openai, LangGraph, Langchain-community, Tavily, Langchain.agents
 - **Deployment**: Streamlit Cloud
-- **Authentication**: Firebase Authentication
+- **Authentication**: Firebase Authentication, Firebase Real Time Database
 
 
 ## User Journey of Application
@@ -129,6 +130,10 @@ If you wanna try with the other credentials, without signning, you can try with
 mail - hriskikesh.yadav332@gmail.com
 psswd - test123
 
+
+## Full Fledge Approach for Organization Adoption
+
+![https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/vision-workflow.png](https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/vision-workflow.png)
 
 ## Data Store In Firebase
 ```bash

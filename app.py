@@ -10,6 +10,8 @@ import os
 import uuid
 from dotenv import load_dotenv
 from firebase_auth import login, signup, logout, data_to_firebase
+from datetime import datetime, timedelta
+import pytz
 
 load_dotenv()
 
@@ -92,6 +94,7 @@ st.markdown("""
         background-image: url("https://img.freepik.com/free-vector/background-gradient-green-tones_23-2148382072.jpg");
         background-size: cover;
     }
+    
     </style>
 """, unsafe_allow_html=True)
 
@@ -201,12 +204,69 @@ def is_relevant_query(query, user_data):
     response = llm.predict(prompt)
     return response.strip().lower() == 'yes'
 
+def get_recent_news(user_data, num_articles=10):
+    interests = ", ".join(user_data['interests'])
+    skills = ", ".join(user_data['skills'])
+
+    current_date = datetime.now(pytz.utc).strftime("%Y-%m-%d")
+    
+    search_query = f"latest news as of {current_date} related to {interests} and {skills}"
+    
+    search_results = TavilySearchResults(
+        max_results=20,
+        include_domains=["bbc.com", "cnn.com", "reuters.com", "apnews.com", "bloomberg.com", "nytimes.com", "wsj.com"],
+        exclude_domains=["wikipedia.org"],
+        time_range="d"  # d for past day
+    ).invoke(search_query)
+    
+    prompt = f"""
+    Based on these search results, identify the 10 most recent and relevant news articles related to the user's interests ({interests}) and skills ({skills}).
+    Today's date is {current_date}. Only include articles from the past week, prioritizing the most recent ones.
+    For each article, provide:
+    1. A concise title (max 15 words)
+    2. A brief summary (2-3 sentences)
+    3. The source URL
+    4. The exact publication date and time (if available, in UTC)
+    5. The source name
+
+    Format the output as a list of dictionaries, each containing 'title', 'summary', 'url', 'date', and 'source' keys.
+    Ensure the 'date' field is in the format 'YYYY-MM-DD HH:MM:SS UTC' if available, or 'YYYY-MM-DD' if only the date is known.
+    If the exact date is not available, use 'Recent' as the date value.
+    
+    Sort the articles by date, with the most recent first.
+
+    Search results:
+    {search_results}
+    """
+    
+    news_articles = eval(llm.predict(prompt))
+    
+    # Additional processing to ensure recency
+    current_time = datetime.now(pytz.utc)
+    filtered_articles = []
+    for article in news_articles:
+        try:
+            if article['date'] != 'Recent':
+                article_date = datetime.strptime(article['date'].split()[0], "%Y-%m-%d")
+                article_date = pytz.utc.localize(article_date)
+                if current_time - article_date <= timedelta(days=7):
+                    filtered_articles.append(article)
+            else:
+                filtered_articles.append(article)
+        except ValueError:
+            # If date parsing fails, include the article anyway
+            filtered_articles.append(article)
+    
+    return filtered_articles[:num_articles]
 
 st.title("AI-Powered Search Engine")
 
 # Check if user is logged in
 if "user_logged_in" not in st.session_state:
     st.session_state.user_logged_in = False
+
+if "trending_topics" not in st.session_state:
+    st.session_state.trending_topics = []
 
 
 st.sidebar.title("User Management")
@@ -217,6 +277,7 @@ else:
     with tab1:
         if login():
             st.session_state.user_logged_in = True
+            st.cache_data.clear()
             st.rerun()
     with tab2:
         if signup():
@@ -225,89 +286,116 @@ else:
 
 
 if st.session_state.user_logged_in:
-    # current_user_chat=get_data_to_firebase()
-    # print(current_user_chat)
-    # Initialize session state for conversations
-    if "conversations" not in st.session_state:
-        st.session_state.conversations = {}
-
-    if "current_conversation_id" not in st.session_state:
-        st.session_state.current_conversation_id = None
-
-    # Sidebar for conversation management
-    st.sidebar.title("Conversations")
-
-    # New conversation button
-    if st.sidebar.button("New Conversation"):
-
-        new_id = str(uuid.uuid4())
-        st.session_state.conversations[new_id] = {
-            "title": "New Conversation",
-            "messages": []
-        }
-        st.session_state.current_conversation_id = new_id
-    #Chat History with Inside Div Overflow
-
- 
-    for conv_id, conv_data in st.session_state.conversations.items():
-        # Generate or update summary title
-        if conv_data["messages"]:
-            conv_data["title"] = summarize_conversation(conv_data["messages"])
-        
-        if st.sidebar.button(conv_data["title"], key=conv_id):
-            st.session_state.current_conversation_id = conv_id
 
 
-    if st.session_state.current_conversation_id:
-        conversation = st.session_state.conversations[st.session_state.current_conversation_id]
-        
+    tab1, tab2 = st.tabs(["💬 Chat", "🔥 Trending Topics"])
 
-        for message in conversation["messages"]:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+    with tab1:
+        # current_user_chat=get_data_to_firebase()
+        # print(current_user_chat)
+        # Initialize session state for conversations
+        if "conversations" not in st.session_state:
+            st.session_state.conversations = {}
 
-        # React to user input
-        if prompt := st.chat_input("What would you like to search for?"):
-            # Display user message in chat message container
-            st.chat_message("user").markdown(prompt)
-            # Add user message to chat history
-            conversation["messages"].append({"role": "user", "content": prompt})
+        if "current_conversation_id" not in st.session_state:
+            st.session_state.current_conversation_id = None
 
-            # Update conversation title after first message
-            if len(conversation["messages"]) == 1:
-                conversation["title"] = summarize_conversation(conversation["messages"])
 
-            # Check if query is relevant to user's department and interests
-            if is_relevant_query(prompt, st.session_state.user_data):
-                try:
-                    response = chain.invoke({"input": prompt, "intermediate_steps": []})
-                    
-                    if response.get('intermediate_steps') and response['intermediate_steps']:
-                        search_results = response['intermediate_steps'][0][1]
-                    else:
+        # Sidebar for conversation management
+        st.sidebar.title("Conversations")
+
+        # New conversation button
+        if st.sidebar.button("New Conversation"):
+
+            new_id = str(uuid.uuid4())
+            st.session_state.conversations[new_id] = {
+                "title": "New Conversation",
+                "messages": []
+            }
+            st.session_state.current_conversation_id = new_id
+        #Chat History with Inside Div Overflow
+
+    
+        for conv_id, conv_data in st.session_state.conversations.items():
+            # Update summary title
+            if conv_data["messages"]:
+                conv_data["title"] = summarize_conversation(conv_data["messages"])
             
-                        search_tool = TavilySearchResults(max_results=5)
-                        search_results = search_tool.invoke(prompt)
-                    
-                    formatted_results = format_search_results(search_results)
-                    overall_summary = generate_overall_summary(search_results)
-                    
-                    ai_response = f"{response['agent_outcome'].return_values['output']}\n\n{formatted_results}\nOverall Summary:\n{overall_summary}"
-                except Exception as e:
-                    st.error(f"An error occurred while processing the search results: {str(e)}")
-                    ai_response = "I apologize, but I encountered an error while processing the search results. Please try your query again or rephrase it."
+            if st.sidebar.button(conv_data["title"], key=conv_id):
+                st.session_state.current_conversation_id = conv_id
+
+
+        if st.session_state.current_conversation_id:
+            conversation = st.session_state.conversations[st.session_state.current_conversation_id]
+            
+
+            for message in conversation["messages"]:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            if prompt := st.chat_input("What would you like to search for?"):
+                st.chat_message("user").markdown(prompt)
+                conversation["messages"].append({"role": "user", "content": prompt})
+
+                if len(conversation["messages"]) == 1:
+                    conversation["title"] = summarize_conversation(conversation["messages"])
+
+                if is_relevant_query(prompt, st.session_state.user_data):
+                    try:
+                        response = chain.invoke({"input": prompt, "intermediate_steps": []})
+                        
+                        if response.get('intermediate_steps') and response['intermediate_steps']:
+                            search_results = response['intermediate_steps'][0][1]
+                        else:
+                
+                            search_tool = TavilySearchResults(max_results=5)
+                            search_results = search_tool.invoke(prompt)
+                        
+                        formatted_results = format_search_results(search_results)
+                        overall_summary = generate_overall_summary(search_results)
+                        
+                        ai_response = f"{response['agent_outcome'].return_values['output']}\n\n{formatted_results}\nOverall Summary:\n{overall_summary}"
+                    except Exception as e:
+                        st.error(f"An error occurred while processing the search results: {str(e)}")
+                        ai_response = "I apologize, but I encountered an error while processing the search results. Please try your query again or rephrase it."
+                else:
+                    ai_response = "I apologize, but this query doesn't seem to be related to your department or interests. Would you like to rephrase your question or ask something more relevant?"
+
+                with st.chat_message("assistant"):
+                    st.markdown(ai_response)
+    
+                conversation["messages"].append({"role": "assistant", "content": ai_response})
+                data_to_firebase(prompt, ai_response, conversation["title"])
+
+                st.rerun()
+        else:
+            st.info("Please create or select a conversation from the sidebar to start chatting.")
+    
+    with tab2:
+            st.title("Latest News")
+            
+            if "recent_news" not in st.session_state:
+                st.session_state.recent_news = []
+
+            if st.button("🔄 Refresh Latest News", key="refresh_news_button"):
+                with st.spinner("Fetching the latest news..."):
+                    st.session_state.recent_news = get_recent_news(st.session_state.user_data)
+                st.success("News updated with the latest articles!")
+
+            col1, col2 = st.columns(2)
+
+            if st.session_state.recent_news:
+                for i, article in enumerate(st.session_state.recent_news):
+                    with (col1 if i % 2 == 0 else col2).expander(f"📰 {article['title']}"):
+                        st.markdown(f"**{article['summary']}**")
+                        st.markdown(f"Source: {article['source']}")
+                        st.markdown(f"Published: {article['date']}")
+                        st.markdown(f"[Read Full Article]({article['url']})")
             else:
-                ai_response = "I apologize, but this query doesn't seem to be related to your department or interests. Would you like to rephrase your question or ask something more relevant?"
+                st.info("Click 'Refresh Latest News' to load the most recent articles.")
 
-            with st.chat_message("assistant"):
-                st.markdown(ai_response)
-            # Add AI response to chat history
-            conversation["messages"].append({"role": "assistant", "content": ai_response})
-            data_to_firebase(prompt, ai_response)
+            st.caption("News articles are tailored to your interests and skills, focusing on the most recent publications. Click 'Refresh Latest News' for up-to-the-minute updates.")
 
-            # Force a rerun to update the display with the new messages
-            st.rerun()
-    else:
-        st.info("Please create or select a conversation from the sidebar to start chatting.")
+
 else:
     st.info("Please log in or sign up to access the chat interface.")
