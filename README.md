@@ -53,7 +53,7 @@ Try the Application Now -
 
 ## Worflow Architecture
 
-![https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/worflow-recent-news.png](https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/worflow-recent-news.png)
+![https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/workflow-recent-news.png](https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/workflow-recent-news.png)
 
 
 ## Features
