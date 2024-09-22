@@ -69,7 +69,7 @@ Try the Application Now -
 ## Tech Stack
 
 - **Frontend**: Streamlit
-- **Backend**: Python, OpenAI, Langchain, Langchain-openai, LangGraph, Langchain-community, Tavily, Langchain.agents
+- **Backend**: Python, OpenAI, Langchain, Langchain-openai, LangGraph, Langchain-community, Langchain.agents, Tavily
 - **Deployment**: Streamlit Cloud
 - **Authentication**: Firebase Authentication, Firebase Real Time Database
 
@@ -136,6 +136,9 @@ psswd - test123
 ![https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/vision-workflow.png](https://github.com/Hrishikesh332/Godrej-Chat-AI/blob/main/src/vision-workflow.png)
 
 ## Data Store In Firebase
+
+The log structure
+
 ```bash
 {
   "users": {
